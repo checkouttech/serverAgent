@@ -14,7 +14,7 @@ class ResponseClass(LocalResponse):
             | <a href="/?json=1&ui=1">Home</a>
             | <a href="/serveragent/confFile?json=1&ui=1">Conf File</a>  
             | <a href="/serveragent/logLineParser?json=1&ui=1">Log Parser</a>  
-            | <a href="errorLog?json=1&ui=1">Error Log</a>
+            | <a href="/serveragent/validateschema?json=1&ui=1">Validate Schema</a>
             | <a href="/serveragent/impressionLog?json=1&ui=1">Impression Log</a>
         </div>
     """ 
@@ -139,10 +139,30 @@ class ResponseClass(LocalResponse):
             self.body = parsedLine  
         return 0 
 
+
+   
+   
+    def validateSchema(self):
+        htmlTextAreaForm = """
+         <div> 
+            <form > 
+             <textarea id="txtArea" rows="10" cols="70"></textarea>  
+             At w3schools.com you will learn how to make a website. We offer free tutorials in all web development technologies.
+             </textarea> 
+             <input type="submit" value="submit">
+            </form > 
+         </div> 
+
+        """
+
+
+
+
+
+        self.body = self._htmlHeader +  self._linksBar + htmlTextAreaForm + self._htmlFooter
         
    
     def home(self):
-
         self.body = self._htmlHeader +  self._linksBar + self._htmlFooter
 
  
@@ -301,7 +321,16 @@ def confFile():
     return res  
 
 
-    
+@route('/serveragent/validateschema')
+def validateschema():
+    res = ResponseClass() 
+    res.validateSchema()
+    return res  
+
+   
+
+
+
 #@bottle.route('/requestdetails', method='POST')
 
 
@@ -309,4 +338,36 @@ def confFile():
 
 run(host="0.0.0.0", port=28080, debug=True)
 
+'''
+
+from voluptuous import Schema, Required, Invalid , MultipleInvalid, All
+from voluptuous import *
+
+sc = {
+       Required('address'):   All(str, Length(min=1)),
+       'page':                All(int, Range(min=0)),
+       'details' : {
+          'paint' :           All(str, Length(min=1))
+          }
+     }
+
+schema = Schema(sc, extra=ALLOW_EXTRA) 
+
+data = {
+    'address': 'some street',
+    'page' : "thisis page",
+    'streetAddress' : "this is street address",
+    'details' : {
+          'paint' : 1
+       }
+     }
+
+
+
+
+try :
+    schema (data) 
+except MultipleInvalid as e :
+    print(sorted(str(i) for i in e.errors))
+'''
 
