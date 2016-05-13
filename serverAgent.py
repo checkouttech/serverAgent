@@ -4,6 +4,9 @@ import bottle
 from bottle import BaseResponse
 from bottle import LocalResponse
 import json
+from voluptuous import Schema, Required, Invalid , MultipleInvalid, All
+from voluptuous import *
+from collections import OrderedDict
 
 # REMEMBER :  LocalResponse is the subclass of Response class which contains the "body"  variable 
 # Therefore it needs to be inherited 
@@ -139,8 +142,6 @@ class ResponseClass(LocalResponse):
             self.body = parsedLine  
         return 0 
 
-
-   
    
     def validateSchema(self):
         htmlTextAreaForm = """
@@ -153,13 +154,80 @@ class ResponseClass(LocalResponse):
             </form > 
          </div> 
 
+         """
+
+    '''
+data = {
+    'address': 'some street',
+    'page' : "thisis page",
+    'streetAddress' : "this is street address",
+    'details' : {
+          'paint' : 1
+       }
+     }
+ 
+
+
+my_dictionary=OrderedDict(json.loads(string))
+print my_dictionary
+
+print ( json.dumps(my_dictionary , indent = 4 ) )
+print '\n'.join(my_dictionary)
+
+    '''
+
+
+
+
+ 
+    def validateSchema(self,data=""):
+       
+        listOfErrors = []
+
+        if (data):
+            dataDict= json.loads(data, 'latin-1')
+            #orderedDataDict = OrderedDict(json.loads(data))
+            #print orderedDataDict 
+            print dataDict 
+    
+            schemaTemplate = {
+                   Required('address'):   All ( Any(str, unicode), Length(min=1)),
+                   'page':                All(int, Range(min=0)),
+                   'details' : {
+                       'paint' :          All ( Any(str, unicode), Length(min=1))
+                    }
+                 }
+            
+            schema = Schema(schemaTemplate, extra=ALLOW_EXTRA) 
+             
+            try :
+                schema (dataDict) 
+            except MultipleInvalid as e :
+                listOfErrors = sorted(str(i) for i in e.errors)
+                print(sorted(str(i) for i in e.errors))
+                    
+
+        htmlTextAreaForm = """
+         <div> 
+             <form action="http://192.168.150.101:28080/serveragent/validateschema?json=1&ui=1" name="confirmationForm"  method="post">
+             <textarea id="confirmationText" class="text" cols="86" rows ="20" name="confirmationText">
+             """ + data   + """
+             </textarea>
+             <input type="submit" value="jsonsubmit">
+           </form>
+         </div> 
         """
+        
+        if len(listOfErrors) > 0 :
+            result = '\n'.join(listOfErrors)
+        else :
+            result = "All good!!! " 
+     
+        #htmlResult = """<div>  <pre>  """ + '\n'.join(listOfErrors) + """   </pre>  </div>  """  
 
+        htmlResult = """<div>  <pre>  """ + result + """   </pre>  </div>  """  
 
-
-
-
-        self.body = self._htmlHeader +  self._linksBar + htmlTextAreaForm + self._htmlFooter
+        self.body = self._htmlHeader +  self._linksBar + htmlTextAreaForm + htmlResult + self._htmlFooter
         
    
     def home(self):
@@ -237,14 +305,14 @@ class ResponseClass(LocalResponse):
         elif ( int(request.query.ui) == 1 )  and ( int(request.query.json) == 0 ) :
             result =  self.getLogLine(id,"parsed")
             self.content_type = 'text/html; charset=UTF-8'
-            htmlResult = """<div>  <pre>  """ + '\n'.join(result) + """ \  </pre>  </div>  """  
+            htmlResult = """<div>  <pre>  """ + '\n'.join(result) + """   </pre>  </div>  """  
             htmlForm = self._htmlForm.replace("[VAR:id]",id)  
             self.body = self._htmlHeader +  self._linksBar + htmlForm + htmlResult + self._htmlFooter
 
         elif ( int(request.query.ui) == 1 )  and ( int(request.query.json) == 1 ) :
             result =  self.getLogLine(id,"json")
             self.content_type = 'text/html; charset=UTF-8'
-            htmlResult = """<div>  <pre>  """ +  json.dumps(result , indent=4, sort_keys=True)  + """ \  </pre>  </div>  """  
+            htmlResult = """<div>  <pre>  """ +  json.dumps(result , indent=4, sort_keys=True)  + """   </pre>  </div>  """  
             print json.dumps(result , indent=4, sort_keys=True) 
             htmlForm = self._htmlForm.replace("[VAR:id]",id)  
             self.body = self._htmlHeader +  self._linksBar + htmlForm + htmlResult + self._htmlFooter
@@ -321,13 +389,22 @@ def confFile():
     return res  
 
 
-@route('/serveragent/validateschema')
+@route('/serveragent/validateschema', method='GET')
 def validateschema():
     res = ResponseClass() 
     res.validateSchema()
     return res  
 
    
+
+@route('/serveragent/validateschema', method='POST')
+def validateschema():
+    
+    data = request.POST['confirmationText']
+    res = ResponseClass() 
+    res.validateSchema( data )
+    return res  
+
 
 
 
@@ -339,10 +416,6 @@ def validateschema():
 run(host="0.0.0.0", port=28080, debug=True)
 
 '''
-
-from voluptuous import Schema, Required, Invalid , MultipleInvalid, All
-from voluptuous import *
-
 sc = {
        Required('address'):   All(str, Length(min=1)),
        'page':                All(int, Range(min=0)),
