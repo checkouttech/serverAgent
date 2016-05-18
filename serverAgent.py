@@ -19,6 +19,7 @@ class ResponseClass(LocalResponse):
             | <a href="/serveragent/logLineParser?json=1&ui=1">Log Parser</a>  
             | <a href="/serveragent/validateschema?json=1&ui=1">Validate Schema</a>
             | <a href="/serveragent/impressionLog?json=1&ui=1">Impression Log</a>
+            | <a href="/serveragent/?json=1&ui=1">Health Check</a>
         </div>
     """ 
 
